@@ -68,6 +68,12 @@ Flask makes it easy to create a web application by providing a set of functions 
    pip install -r requirements.txt
    ```
 
+7. Upgrade flask, .txt is outdated
+
+   ```
+   pip install --upgrade flask
+   ```
+
 7. Run the app:
 
    ```terminal
