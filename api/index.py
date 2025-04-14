@@ -127,7 +127,26 @@ def catch_all(path):
     """A special route that catches all other requests"""
     return redirect(url_for('index'))
 
+# ===== Vercel-Specific Additions =====
+@app.route('/api/search')
+def search():
+    """Example API endpoint"""
+    return jsonify({"message": "Search endpoint works!"})
+
+def vercel_handler(request):
+    """Required for Vercel serverless functions"""
+    with app.app_context():
+        response = app.full_dispatch_request()()
+    return {
+        "statusCode": response.status_code,
+        "headers": dict(response.headers),
+        "body": response.get_data(as_text=True)
+    }
+
 if __name__ == '__main__':
     # Create static/images directory if it doesn't exist
     os.makedirs(os.path.join(app.static_folder, 'images'), exist_ok=True)
     app.run(debug=True)
+else:
+    # This makes it work both locally and on Vercel
+    app = app
