@@ -1,18 +1,3 @@
-# Flask-Vercel Hackpack
-
-> A premade Flask template!
-
-- [Flask-Vercel Hackpack](#flask-vercel-hackpack)
-  - [About FullyPacks 🐘🎁](#about-fullypacks-)
-  - [About Flask](#about-flask)
-  - [How to Deploy](#how-to-deploy)
-    - [Automatic](#automatic)
-    - [Manual](#manual)
-  - [How to Run Locally](#how-to-run-locally)
-
-## About FullyPacks 🐘🎁
-
-Welcome to `fullypack_flask_vercel`, one of a [_curated collection of Github templates_](https://github.com/orgs/acmcsufoss/repositories?q=fullypack_&type=all&sort=stargazers) designed to kickstart your project and help you get up and running in no time!
 
 ## About Flask
 
@@ -26,16 +11,8 @@ Flask makes it easy to create a web application by providing a set of functions 
 - Define the behavior of your application, such as what happens when a user clicks a button or fills out a form.
 - Store and retrieve data, such as user information or images.
 
-## How to Deploy
-
-### Automatic
-
-- Click [here](https://vercel.com/new/clone?repository-url=https://github.com/acmcsufoss/hackpack_flask_vercel/)
-
-### Manual
-
-1. Use this template by clicking "Use this template" button above or [click here](https://github.com/acmcsufoss/hackpack_flask_vercel/generate)
-2. Deploy your new project to [Vercel](https://vercel.com/new)
+## Deployed at
+[click here](https://clothingshop-one.vercel.app/)
 
 ## How to Run Locally
 
@@ -66,12 +43,6 @@ Flask makes it easy to create a web application by providing a set of functions 
 
    ```terminal
    pip install -r requirements.txt
-   ```
-
-7. Upgrade flask, .txt is outdated
-
-   ```
-   pip install --upgrade flask
    ```
 
 7. Run the app:
