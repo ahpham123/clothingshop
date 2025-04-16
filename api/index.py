@@ -1,49 +1,39 @@
 from flask import Flask, redirect, url_for, render_template, jsonify, request
 import json
 import os
+import requests
 
 # Our Flask app object
 app = Flask(__name__, template_folder='../templates',
             static_folder='../static')
 
-# Sample product data (in a real app, this would come from a database)
-PRODUCTS = [
-    {
-        "id": 1,
-        "name": "Wireless Headphones",
-        "price": 99.99,
-        "description": "High-quality wireless headphones with noise cancellation",
-        "image": "/static/images/headphones.jpg",
-        "category": "electronics"
-    },
-    {
-        "id": 2,
-        "name": "Smart Watch",
-        "price": 199.99,
-        "description": "Feature-packed smartwatch with health monitoring",
-        "image": "/static/images/smartwatch.jpg",
-        "category": "electronics"
-    },
-    {
-        "id": 3,
-        "name": "Bluetooth Speaker",
-        "price": 79.99,
-        "description": "Portable speaker with 20-hour battery life",
-        "image": "/static/images/speaker.jpg",
-        "category": "electronics"
-    },
-    {
-        "id": 4,
-        "name": "Laptop Backpack",
-        "price": 49.99,
-        "description": "Durable backpack with USB charging port",
-        "image": "/static/images/backpack.jpg",
-        "category": "accessories"
-    }
+#API call for products
+PRODUCTS = requests.get('https://fakestoreapi.com/products')
+'''
+[
+  {
+    "id": 0,
+    "title": "string",
+    "price": 0.1,
+    "description": "string",
+    "category": "string",
+    "image": "http://example.com"
+    "rating": {"rate": 4, "count": 150 }
+  }
 ]
+'''
 
 # In-memory "database" for cart (in production, use a real database)
-CARTS = {}
+CARTS = []
+'''
+[
+    {
+        "user_id": 0,
+        "product_id": 0,
+        "quantity": 0
+    }
+]
+'''
 
 @app.route('/')
 @app.route('/index')
@@ -59,60 +49,50 @@ def get_products():
 @app.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
     """API endpoint to get a single product by ID"""
-    product = next((p for p in PRODUCTS if p['id'] == product_id), None)
-    if product:
-        return jsonify(product)
+    for item in PRODUCTS:
+            if item["id"] == product_id:
+                return item
     return jsonify({"error": "Product not found"}), 404
 
-@app.route('/api/cart', methods=['GET', 'POST'])
-def handle_cart():
+@app.route('/api/cart', methods=['GET'])
+def get_cart(user_id):
     """API endpoint for cart operations"""
-    if request.method == 'GET':
-        # Get user's cart (in a real app, you'd have user authentication)
-        user_id = request.args.get('user_id', 'default')
-        cart = CARTS.get(user_id, [])
-        return jsonify(cart)
+    if not user_id:
+        return jsonify({"error": "User id expected not found"}), 404
     
-    elif request.method == 'POST':
-        # Add item to cart
-        data = request.get_json()
-        user_id = data.get('user_id', 'default')
-        product_id = data.get('product_id')
-        quantity = data.get('quantity', 1)
-        
-        if not product_id:
-            return jsonify({"error": "Product ID is required"}), 400
-        
-        product = next((p for p in PRODUCTS if p['id'] == product_id), None)
-        if not product:
-            return jsonify({"error": "Product not found"}), 404
-        
-        # Initialize cart if it doesn't exist
+    if request.method == 'GET':
         if user_id not in CARTS:
-            CARTS[user_id] = []
+            CARTS[user_id] = {}
+            return CARTS[user_id]
+    
+        # Get user's cart (in a real app, you'd have user authentication)
+        return CARTS[user_id]
+
+@app.route('/api/cart', methods=['POST'])
+def add_cart(user_id, product_id):
+
+    if not product_id:
+        return jsonify({"error": "Product ID is required"}), 400
         
-        # Check if product already in cart
-        cart_item = next((item for item in CARTS[user_id] if item['product_id'] == product_id), None)
+    if request.method == 'POST':
+        #Make user cart if doesnt exist
+        if user_id not in CARTS:
+            CARTS[user_id] = {}
+
+        # Add item to cart
+        for item in PRODUCTS:
+            if item["id"] == product_id:
+                #Instead of set quantity, make it add to stored quantity ------------------------------------------------------------------------
+                CARTS[user_id] = {product_id: 1}
+                return jsonify({"success": "Product found and added"}), 200
         
-        if cart_item:
-            cart_item['quantity'] += quantity
-        else:
-            CARTS[user_id].append({
-                "product_id": product_id,
-                "name": product['name'],
-                "price": product['price'],
-                "image": product['image'],
-                "quantity": quantity
-            })
+        return jsonify({"error": "Product not found"}), 404
+
         
-        return jsonify(CARTS[user_id])
 
 @app.route('/api/cart/remove', methods=['POST'])
-def remove_from_cart():
+def remove_from_cart(user_id, product_id):
     """API endpoint to remove item from cart"""
-    data = request.get_json()
-    user_id = data.get('user_id', 'default')
-    product_id = data.get('product_id')
     
     if not product_id:
         return jsonify({"error": "Product ID is required"}), 400
