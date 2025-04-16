@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLACEHOLDERNAME - Your Online Store</title>
+    <title>Products - PLACEHOLDERNAME</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -13,21 +13,23 @@
             <nav>
                 <ul>
                     <li><a href="/">Home</a></li>
-                    <li><a href="/products">Products</a></li>
-                    <li><a href="#">Cart <span id="cart-count">0</span></a></li>
+                    <li><a href="/products" class="active">Products</a></li>
+                    <li><a href="#" id="cart-link">Cart <span id="cart-count">0</span></a></li>
                 </ul>
             </nav>
         </div>
     </header>
     <main class="container">
-        <section class="hero">
-            <h2>Welcome to PLACEHOLDERNAME</h2>
-            <p>Discover amazing products at unbeatable prices</p>
-        </section>
-        <section class="products">
-            <h2>Featured Products</h2>
-            <div class="product-grid" id="product-grid">
+        <section class="products-section">
+            <h2>All Products</h2>
+            
+            <div class="product-filters" id="product-filters">
+                <!-- Category filters will be added here -->
+            </div>
+            
+            <div class="product-grid" id="all-products-grid">
                 <!-- Products will be loaded here via JavaScript -->
+                <div class="loading">Loading products...</div>
             </div>
         </section>
     </main>
@@ -37,7 +39,6 @@
         </div>
     </footer>
     
-    <!-- Don't forget to include your JavaScript file -->
     <script src="/static/main.js"></script>
 </body>
 </html>

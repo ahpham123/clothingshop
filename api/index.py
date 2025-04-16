@@ -1,46 +1,12 @@
 from flask import Flask, redirect, url_for, render_template, jsonify, request
+from flask_cors import CORS
 import json
 import os
+import requests
 
 # Our Flask app object
-app = Flask(__name__, template_folder='../templates',
-            static_folder='../static')
-
-# Sample product data (in a real app, this would come from a database)
-PRODUCTS = [
-    {
-        "id": 1,
-        "name": "Wireless Headphones",
-        "price": 99.99,
-        "description": "High-quality wireless headphones with noise cancellation",
-        "image": "/static/images/headphones.jpg",
-        "category": "electronics"
-    },
-    {
-        "id": 2,
-        "name": "Smart Watch",
-        "price": 199.99,
-        "description": "Feature-packed smartwatch with health monitoring",
-        "image": "/static/images/smartwatch.jpg",
-        "category": "electronics"
-    },
-    {
-        "id": 3,
-        "name": "Bluetooth Speaker",
-        "price": 79.99,
-        "description": "Portable speaker with 20-hour battery life",
-        "image": "/static/images/speaker.jpg",
-        "category": "electronics"
-    },
-    {
-        "id": 4,
-        "name": "Laptop Backpack",
-        "price": 49.99,
-        "description": "Durable backpack with USB charging port",
-        "image": "/static/images/backpack.jpg",
-        "category": "accessories"
-    }
-]
+app = Flask(__name__, template_folder='../templates', static_folder='../static')
+CORS(app)
 
 # In-memory "database" for cart (in production, use a real database)
 CARTS = {}
@@ -51,76 +17,107 @@ def index():
     """Our default routes of '/' and '/index'"""
     return render_template('index.html')
 
+@app.route('/products')
+def products():
+    """Products page route"""
+    return render_template('products.html')
+
 @app.route('/api/products', methods=['GET'])
 def get_products():
     """API endpoint to get all products"""
-    return jsonify(PRODUCTS)
+    try:
+        # Fetch products from FakeStoreAPI
+        response = requests.get('https://fakestoreapi.com/products')
+        response.raise_for_status()  # Raise exception for HTTP errors
+        products = response.json()
+        return jsonify(products)
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to fetch products: {str(e)}"}), 500
 
 @app.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
     """API endpoint to get a single product by ID"""
-    product = next((p for p in PRODUCTS if p['id'] == product_id), None)
-    if product:
+    try:
+        response = requests.get(f'https://fakestoreapi.com/products/{product_id}')
+        response.raise_for_status()
+        product = response.json()
         return jsonify(product)
-    return jsonify({"error": "Product not found"}), 404
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to fetch product: {str(e)}"}), 500
 
-@app.route('/api/cart', methods=['GET', 'POST'])
-def handle_cart():
-    """API endpoint for cart operations"""
-    if request.method == 'GET':
-        # Get user's cart (in a real app, you'd have user authentication)
-        user_id = request.args.get('user_id', 'default')
-        cart = CARTS.get(user_id, [])
-        return jsonify(cart)
+@app.route('/api/cart', methods=['GET'])
+def get_cart():
+    """API endpoint to get user's cart"""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({"error": "User ID is required"}), 400
     
-    elif request.method == 'POST':
-        # Add item to cart
-        data = request.get_json()
-        user_id = data.get('user_id', 'default')
-        product_id = data.get('product_id')
-        quantity = data.get('quantity', 1)
+    # Return empty cart if user doesn't have one yet
+    if user_id not in CARTS:
+        CARTS[user_id] = []
+    
+    return jsonify(CARTS[user_id])
+
+@app.route('/api/cart/add', methods=['POST'])
+def add_to_cart():
+    """API endpoint to add item to cart"""
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    user_id = data.get('user_id')
+    product_id = data.get('product_id')
+    
+    if not user_id or not product_id:
+        return jsonify({"error": "User ID and Product ID are required"}), 400
+    
+    # Initialize cart if it doesn't exist
+    if user_id not in CARTS:
+        CARTS[user_id] = []
+    
+    # Check if product is already in cart
+    for item in CARTS[user_id]:
+        if item['product_id'] == product_id:
+            item['quantity'] += 1
+            return jsonify({"success": True, "cart": CARTS[user_id]})
+    
+    # Add new item to cart
+    try:
+        # Fetch product details from FakeStoreAPI
+        response = requests.get(f'https://fakestoreapi.com/products/{product_id}')
+        response.raise_for_status()
+        product = response.json()
         
-        if not product_id:
-            return jsonify({"error": "Product ID is required"}), 400
+        # Add to cart with quantity 1
+        CARTS[user_id].append({
+            'product_id': product_id,
+            'title': product['title'],
+            'price': product['price'],
+            'image': product['image'],
+            'quantity': 1
+        })
         
-        product = next((p for p in PRODUCTS if p['id'] == product_id), None)
-        if not product:
-            return jsonify({"error": "Product not found"}), 404
-        
-        # Initialize cart if it doesn't exist
-        if user_id not in CARTS:
-            CARTS[user_id] = []
-        
-        # Check if product already in cart
-        cart_item = next((item for item in CARTS[user_id] if item['product_id'] == product_id), None)
-        
-        if cart_item:
-            cart_item['quantity'] += quantity
-        else:
-            CARTS[user_id].append({
-                "product_id": product_id,
-                "name": product['name'],
-                "price": product['price'],
-                "image": product['image'],
-                "quantity": quantity
-            })
-        
-        return jsonify(CARTS[user_id])
+        return jsonify({"success": True, "cart": CARTS[user_id]})
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": f"Failed to fetch product: {str(e)}"}), 500
 
 @app.route('/api/cart/remove', methods=['POST'])
 def remove_from_cart():
     """API endpoint to remove item from cart"""
-    data = request.get_json()
-    user_id = data.get('user_id', 'default')
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    user_id = data.get('user_id')
     product_id = data.get('product_id')
     
-    if not product_id:
-        return jsonify({"error": "Product ID is required"}), 400
+    if not user_id or not product_id:
+        return jsonify({"error": "User ID and Product ID are required"}), 400
     
     if user_id in CARTS:
         CARTS[user_id] = [item for item in CARTS[user_id] if item['product_id'] != product_id]
     
-    return jsonify(CARTS.get(user_id, []))
+    return jsonify({"success": True, "cart": CARTS.get(user_id, [])})
 
 @app.route('/<path:path>')
 def catch_all(path):
@@ -128,15 +125,22 @@ def catch_all(path):
     return redirect(url_for('index'))
 
 # ===== Vercel-Specific Additions =====
-@app.route('/api/search')
-def search():
-    """Example API endpoint"""
-    return jsonify({"message": "Search endpoint works!"})
-
 def vercel_handler(request):
     """Required for Vercel serverless functions"""
-    with app.app_context():
-        response = app.full_dispatch_request()()
+    with app.test_request_context(
+        path=request.get('path', '/'),
+        method=request.get('httpMethod', 'GET'),
+        headers=request.get('headers', {}),
+        data=request.get('body', '')
+    ):
+        try:
+            response = app.full_dispatch_request()
+        except Exception as e:
+            return {
+                "statusCode": 500,
+                "body": str(e)
+            }
+            
     return {
         "statusCode": response.status_code,
         "headers": dict(response.headers),
