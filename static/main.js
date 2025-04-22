@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         products.forEach(product => {
+            // Adjust for the new structure - rating is now separate fields
             const productCard = document.createElement('div');
             productCard.className = 'product-card';
             productCard.innerHTML = `
@@ -121,8 +122,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <p class="product-category">${product.category}</p>
                     <p class="product-price">$${product.price.toFixed(2)}</p>
                     <div class="product-rating">
-                        <span class="stars">${getStarRating(product.rating?.rate || 0)}</span>
-                        <span class="count">(${product.rating?.count || 0})</span>
+                        <span class="stars">${getStarRating(product.rating_rate || 0)}</span>
+                        <span class="count">(${product.rating_count || 0})</span>
                     </div>
                     <button class="add-to-cart" data-id="${product.id}">Add to Cart</button>
                 </div>

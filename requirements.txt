@@ -10,3 +10,5 @@ MarkupSafe==3.0.2
 requests==2.32.3
 urllib3==2.4.0
 Werkzeug==2.2.2
+supabase==2.15.0
+python-dotenv==1.1.0
