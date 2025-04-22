@@ -3,6 +3,16 @@ from flask_cors import CORS
 import json
 import os
 import requests
+from supabase import create_client
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize Supabase client
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_KEY")
+supabase = create_client(supabase_url, supabase_key)
 
 # Our Flask app object
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
@@ -24,25 +34,35 @@ def products():
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    """API endpoint to get all products"""
+    """API endpoint to get all products from Supabase"""
     try:
-        # Fetch products from FakeStoreAPI
-        response = requests.get('https://fakestoreapi.com/products')
-        response.raise_for_status()  # Raise exception for HTTP errors
-        products = response.json()
+        # Fetch products from Supabase
+        response = supabase.table('products').select('*').execute()
+        
+        # Check if there was an error
+        if hasattr(response, 'error') and response.error is not None:
+            return jsonify({"error": "Failed to fetch products from database"}), 500
+            
+        products = response.data
         return jsonify(products)
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return jsonify({"error": f"Failed to fetch products: {str(e)}"}), 500
 
 @app.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
-    """API endpoint to get a single product by ID"""
+    """API endpoint to get a single product by ID from Supabase"""
     try:
-        response = requests.get(f'https://fakestoreapi.com/products/{product_id}')
-        response.raise_for_status()
-        product = response.json()
+        response = supabase.table('products').select('*').eq('id', product_id).execute()
+        
+        if hasattr(response, 'error') and response.error is not None:
+            return jsonify({"error": "Failed to fetch product from database"}), 500
+            
+        if not response.data:
+            return jsonify({"error": "Product not found"}), 404
+            
+        product = response.data[0]
         return jsonify(product)
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return jsonify({"error": f"Failed to fetch product: {str(e)}"}), 500
 
 @app.route('/api/cart', methods=['GET'])
@@ -83,10 +103,16 @@ def add_to_cart():
     
     # Add new item to cart
     try:
-        # Fetch product details from FakeStoreAPI
-        response = requests.get(f'https://fakestoreapi.com/products/{product_id}')
-        response.raise_for_status()
-        product = response.json()
+        # Fetch product details from Supabase
+        response = supabase.table('products').select('*').eq('id', product_id).execute()
+        
+        if hasattr(response, 'error') and response.error is not None:
+            return jsonify({"error": "Failed to fetch product from database"}), 500
+            
+        if not response.data:
+            return jsonify({"error": "Product not found"}), 404
+            
+        product = response.data[0]
         
         # Add to cart with quantity 1
         CARTS[user_id].append({
@@ -98,7 +124,7 @@ def add_to_cart():
         })
         
         return jsonify({"success": True, "cart": CARTS[user_id]})
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         return jsonify({"error": f"Failed to fetch product: {str(e)}"}), 500
 
 @app.route('/api/cart/remove', methods=['POST'])
@@ -118,6 +144,46 @@ def remove_from_cart():
         CARTS[user_id] = [item for item in CARTS[user_id] if item['product_id'] != product_id]
     
     return jsonify({"success": True, "cart": CARTS.get(user_id, [])})
+
+# Admin endpoint to seed the database with products
+@app.route('/api/admin/seed-products', methods=['POST'])
+def seed_products():
+    """Admin endpoint to seed the Supabase database with products from FakeStoreAPI"""
+    # Optional: Add authentication for this endpoint
+    
+    try:
+        # First check if products already exist
+        existing = supabase.table('products').select('id').limit(1).execute()
+        
+        if existing.data and len(existing.data) > 0:
+            return jsonify({"message": "Database already contains products"}), 200
+        
+        # Fetch products from FakeStoreAPI
+        response = requests.get('https://fakestoreapi.com/products')
+        response.raise_for_status()
+        products = response.json()
+        
+        # Transform the products to match our schema
+        transformed_products = []
+        for product in products:
+            transformed_products.append({
+                'id': product['id'],
+                'title': product['title'],
+                'price': product['price'],
+                'description': product['description'],
+                'category': product['category'],
+                'image': product['image'],
+                'rating_rate': product['rating']['rate'],
+                'rating_count': product['rating']['count']
+            })
+        
+        # Insert products into Supabase
+        for product in transformed_products:
+            supabase.table('products').insert(product).execute()
+        
+        return jsonify({"success": True, "message": f"Added {len(transformed_products)} products to database"})
+    except Exception as e:
+        return jsonify({"error": f"Failed to seed database: {str(e)}"}), 500
 
 @app.route('/<path:path>')
 def catch_all(path):
