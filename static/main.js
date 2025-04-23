@@ -467,7 +467,6 @@ if (document.getElementById('all-products-grid')) {
     });
 }
 
-
 // Handle cart link click
 document.querySelectorAll('#cart-link, nav ul li a[href="#"]').forEach(link => {
     link.addEventListener('click', (e) => {
