@@ -464,52 +464,9 @@ if (document.getElementById('all-products-grid')) {
                 cart.addItem(productId);
             });
         });
-        
-        // Set up category filters
-        setupCategoryFilters(products);
     });
 }
 
-function setupCategoryFilters(products) {
-    const filtersContainer = document.getElementById('product-filters');
-    if (!filtersContainer) return;
-    
-    // Get unique categories
-    const categories = [...new Set(products.map(p => p.category))];
-    
-    // Create "All" button
-    const allButton = document.createElement('button');
-    allButton.className = 'filter-btn active';
-    allButton.textContent = 'All';
-    allButton.addEventListener('click', () => {
-        document.querySelectorAll('.product-card').forEach(card => {
-            card.style.display = 'block';
-        });
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        allButton.classList.add('active');
-    });
-    filtersContainer.appendChild(allButton);
-    
-    // Create category buttons
-    categories.forEach(category => {
-        const button = document.createElement('button');
-        button.className = 'filter-btn';
-        button.textContent = category;
-        button.addEventListener('click', () => {
-            document.querySelectorAll('.product-card').forEach(card => {
-                const cardCategory = card.querySelector('.product-category').textContent;
-                card.style.display = cardCategory === category ? 'block' : 'none';
-            });
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-        });
-        filtersContainer.appendChild(button);
-    });
-}
 
 // Handle cart link click
 document.querySelectorAll('#cart-link, nav ul li a[href="#"]').forEach(link => {
