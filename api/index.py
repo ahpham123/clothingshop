@@ -32,6 +32,11 @@ def products():
     """Products page route"""
     return render_template('products.html')
 
+@app.route('/cart')
+def cart():
+    """Cart page route"""
+    return render_template('cart.html')
+
 @app.route('/api/products', methods=['GET'])
 def get_products():
     """API endpoint to get all products from Supabase"""
