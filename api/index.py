@@ -34,19 +34,34 @@ def products():
 
 @app.route('/api/products', methods=['GET'])
 def get_products():
-    """API endpoint to get all products from Supabase"""
     try:
-        # Fetch products from Supabase
         response = supabase.table('products').select('*').execute()
         
-        # Check if there was an error
         if hasattr(response, 'error') and response.error is not None:
-            return jsonify({"error": "Failed to fetch products from database"}), 500
+            return jsonify({"error": "Failed to fetch products"}), 500
             
         products = response.data
-        return jsonify(products)
+        
+        # Transform the products to properly nest rating data
+        transformed_products = []
+        for product in products:
+            transformed_product = {
+                'id': product['id'],
+                'title': product['title'],
+                'price': product['price'],
+                'description': product['description'],
+                'category': product['category'],
+                'image': product['image'],
+                'rating': {
+                    'rate': product.get('rating.rate', 0),
+                    'count': product.get('rating.count', 0)
+                }
+            }
+            transformed_products.append(transformed_product)
+        
+        return jsonify(transformed_products)
     except Exception as e:
-        return jsonify({"error": f"Failed to fetch products: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/products/<int:product_id>', methods=['GET'])
 def get_product(product_id):
