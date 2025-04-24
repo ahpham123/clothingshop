@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.querySelector('nav').addEventListener('click', function(e) {
         if (e.target.textContent.includes('Cart')) {
             e.preventDefault();
-            showCartModal();
+            window.location.href = '/cart';
         }
     });
     
@@ -191,11 +191,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Error updating cart:', error);
             cartCount.textContent = '?';
         }
-    }
-    
-    function showCartModal() {
-        // Implementation for showing cart modal will be added in future updates
-        alert('Cart functionality coming soon!');
     }
     
     function truncateText(text, maxLength) {
