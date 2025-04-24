@@ -16,13 +16,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     } else if (currentPage === '/products') {
         // Products page - show all products with filtering
         await loadAllProducts();
+    } else if (currentPage === '/cart') {
+        // Cart page - load cart items
+        await loadCartPage();
     }
     
     // Add event listener for navigation
     document.querySelector('nav').addEventListener('click', function(e) {
         if (e.target.textContent.includes('Cart')) {
             e.preventDefault();
-            showCartModal();
+            window.location.href = '/cart';
         }
     });
     
@@ -52,6 +55,80 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (error) {
             console.error('Error loading products:', error);
             document.getElementById('all-products-grid').innerHTML = '<p class="error">Failed to load products. Please try again later.</p>';
+        }
+    }
+    
+    async function loadCartPage() {
+        try {
+            const cartContainer = document.getElementById('cart-container');
+            if (!cartContainer) return;
+            
+            const cartItems = await fetchCartItems();
+            
+            if (cartItems.length === 0) {
+                cartContainer.innerHTML = `
+                    <div class="empty-cart">
+                        <p>Your cart is empty.</p>
+                        <a href="/products" class="add-to-cart" style="display: inline-block; margin-top: 20px;">Shop Now</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Calculate total
+            const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // Create cart HTML
+            cartContainer.innerHTML = `
+                <div class="cart-items">
+                    <div class="cart-header">
+                        <div class="header-item">Product</div>
+                        <div class="header-item">Price</div>
+                        <div class="header-item">Quantity</div>
+                        <div class="header-item">Total</div>
+                        <div class="header-item">Action</div>
+                    </div>
+                    <div id="cart-items-list">
+                        ${cartItems.map(item => `
+                            <div class="cart-item">
+                                <div class="cart-item-product">
+                                    <img src="${item.image}" alt="${item.title}" class="cart-item-image">
+                                    <div class="cart-item-title">${item.title}</div>
+                                </div>
+                                <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                                <div class="cart-item-quantity">${item.quantity}</div>
+                                <div class="cart-item-total">$${(item.price * item.quantity).toFixed(2)}</div>
+                                <div class="cart-item-action">
+                                    <button class="remove-from-cart" data-id="${item.product_id}">Remove</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="cart-summary">
+                    <div class="cart-total">
+                        Total: <span class="total-amount">$${total.toFixed(2)}</span>
+                    </div>
+                    <button class="checkout-btn">Proceed to Checkout</button>
+                </div>
+            `;
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-from-cart').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const productId = parseInt(this.getAttribute('data-id'));
+                    await removeFromCart(productId);
+                });
+            });
+            
+            // Add event listener to checkout button
+            document.querySelector('.checkout-btn').addEventListener('click', function() {
+                alert('Checkout functionality is not implemented in this demo.');
+            });
+            
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            document.getElementById('cart-container').innerHTML = '<p class="error">Failed to load cart. Please try again later.</p>';
         }
     }
     
@@ -156,7 +233,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             const data = await response.json();
             
             if (data.success) {
-                // Update UI
+                // Show success message
+                showCartMessage('Product added to cart!');
+                
+                // Update button
                 buttonElement.textContent = 'Added!';
                 setTimeout(() => {
                     buttonElement.textContent = 'Add to Cart';
@@ -180,10 +260,41 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
+    async function removeFromCart(productId) {
+        try {
+            const response = await fetch('/api/cart/remove', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: USER_ID,
+                    product_id: productId
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show success message
+                showCartMessage('Product removed from cart!');
+                
+                // Update cart display
+                updateCartDisplay();
+                
+                // Reload cart page
+                await loadCartPage();
+            } else {
+                console.error('Error removing from cart:', data.error);
+            }
+        } catch (error) {
+            console.error('Failed to remove from cart:', error);
+        }
+    }
+    
     async function updateCartDisplay() {
         try {
-            const response = await fetch(`/api/cart?user_id=${USER_ID}`);
-            const cartItems = await response.json();
+            const cartItems = await fetchCartItems();
             
             const totalItems = cartItems.reduce((total, item) => total + item.quantity, 0);
             cartCount.textContent = totalItems;
@@ -193,9 +304,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    function showCartModal() {
-        // Implementation for showing cart modal will be added in future updates
-        alert('Cart functionality coming soon!');
+    async function fetchCartItems() {
+        const response = await fetch(`/api/cart?user_id=${USER_ID}`);
+        return await response.json();
+    }
+    
+    function showCartMessage(message) {
+        // Create message element
+        const messageEl = document.createElement('div');
+        messageEl.className = 'cart-message';
+        messageEl.textContent = message;
+        
+        // Add to DOM
+        document.body.appendChild(messageEl);
+        
+        // Remove after animation completes
+        setTimeout(() => {
+            messageEl.remove();
+        }, 3000);
     }
     
     function truncateText(text, maxLength) {
