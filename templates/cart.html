@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLACEHOLDERNAME - Your Online Store</title>
+    <title>PLACEHOLDERNAME - Your Shopping Cart</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
                 <ul>
                     <li><a href="/">Home</a></li>
                     <li><a href="/products">Products</a></li>
-                    <li><a href="#">Cart <span id="cart-count">0</span></a></li>
+                    <li><a href="/cart" class="active">Cart <span id="cart-count">0</span></a></li>
                 </ul>
             </nav>
         </div>
@@ -23,7 +23,8 @@
         <section class="cart-section">
             <h2>Your Shopping Cart</h2>
             <div id="cart-container">
-                <!-- Cart items will be loaded here via JavaScript -->
+                <!-- Cart loading placeholder -->
+                <div class="loading">Loading your cart...</div>
             </div>
         </section>
     </main>
@@ -32,7 +33,7 @@
             <p>&copy; 2025 PLACEHOLDERNAME. All rights reserved.</p>
         </div>
     </footer>
-    
+   
     <script src="/static/main.js"></script>
 </body>
 </html>
