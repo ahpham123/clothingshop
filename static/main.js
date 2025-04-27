@@ -1,7 +1,21 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    // Generate a simple user ID for demo purposes
-    const USER_ID = localStorage.getItem('user_id') || 'user_' + Math.floor(Math.random() * 10000);
-    localStorage.setItem('user_id', USER_ID);
+    // Function to generate a proper UUID
+    const generateUUID = () => {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0, 
+                v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+
+    // Check for existing user ID
+    let USER_ID = localStorage.getItem('user_id');
+
+    // If user ID doesn't exist or is in the old format (starts with "user_"), generate a new UUID
+    if (!USER_ID || USER_ID.startsWith('user_')) {
+        USER_ID = generateUUID();
+        localStorage.setItem('user_id', USER_ID);
+    }
     
     // Initialize cart display
     const cartCount = document.getElementById('cart-count');
@@ -122,8 +136,67 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
             
             // Add event listener to checkout button
-            document.querySelector('.checkout-btn').addEventListener('click', function() {
-                alert('Checkout functionality is not implemented in this demo.');
+            document.querySelector('.checkout-btn').addEventListener('click', async function() {
+                try {
+                    // Get cart items
+                    const cartItems = await fetchCartItems();
+                    
+                    if (cartItems.length === 0) {
+                        alert('Your cart is empty.');
+                        return;
+                    }
+                    
+                    // Disable the button during processing
+                    this.disabled = true;
+                    this.textContent = 'Processing...';
+                    
+                    // Send checkout request to backend
+                    const response = await fetch('/api/checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            user_id: USER_ID,
+                            items: cartItems
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // If server generated a new UUID, update our local storage
+                        if (data.new_user_id) {
+                            USER_ID = data.new_user_id;
+                            localStorage.setItem('user_id', USER_ID);
+                            console.log('Updated to new UUID:', USER_ID);
+                        }
+                        
+                        // Show success message
+                        alert('Order processed successfully!');
+                        
+                        // Update cart display
+                        updateCartDisplay();
+                        
+                        // Redirect to confirmation page or show confirmation message
+                        // For now, just reload the cart page
+                        window.location.reload();
+                    } else {
+                        console.error('Checkout error:', data.error);
+                        alert(`Checkout failed: ${data.error}`);
+                        
+                        // Re-enable the button
+                        this.disabled = false;
+                        this.textContent = 'Proceed to Checkout';
+                    }
+                } catch (error) {
+                    console.error('Failed to process checkout:', error);
+                    alert('Failed to process checkout. Please try again.');
+                    
+                    // Re-enable the button
+                    this.disabled = false;
+                    this.textContent = 'Proceed to Checkout';
+                }
             });
             
         } catch (error) {
