@@ -5,6 +5,7 @@ import os
 import requests
 from supabase import create_client
 from dotenv import load_dotenv
+import uuid
 
 # Load environment variables from .env file
 load_dotenv()
@@ -165,46 +166,66 @@ def remove_from_cart():
     
     return jsonify({"success": True, "cart": CARTS.get(user_id, [])})
 
-# Admin endpoint to seed the database with products
-@app.route('/api/admin/seed-products', methods=['POST'])
-def seed_products():
-    """Admin endpoint to seed the Supabase database with products from FakeStoreAPI"""
-    # Optional: Add authentication for this endpoint
+@app.route('/api/checkout', methods=['POST'])
+def checkout():
+    """API endpoint to process checkout and save to Supabase"""
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    user_id = data.get('user_id')
+    items = data.get('items')
+    
+    if not user_id or not items:
+        return jsonify({"error": "User ID and Items are required"}), 400
     
     try:
-        # First check if products already exist
-        existing = supabase.table('products').select('id').limit(1).execute()
+        # Check if user_id is in the old format and convert if needed
+        if user_id.startswith('user_'):
+            # For existing users with the old format, generate a new UUID
+            import uuid
+            user_id = str(uuid.uuid4())
+            
+            # Return the new UUID so frontend can update localStorage
+            new_uuid_generated = True
+        else:
+            new_uuid_generated = False
         
-        if existing.data and len(existing.data) > 0:
-            return jsonify({"message": "Database already contains products"}), 200
+        # First, add to users table
+        user_response = supabase.table('users').upsert(
+            {"user_id": user_id}
+        ).execute()
         
-        # Fetch products from FakeStoreAPI
-        response = requests.get('https://fakestoreapi.com/products')
-        response.raise_for_status()
-        products = response.json()
+        if hasattr(user_response, 'error') and user_response.error is not None:
+            return jsonify({"error": f"Failed to create user entry: {user_response.error}"}), 500
         
-        # Transform the products to match our schema
-        transformed_products = []
-        for product in products:
-            transformed_products.append({
-                'id': product['id'],
-                'title': product['title'],
-                'price': product['price'],
-                'description': product['description'],
-                'category': product['category'],
-                'image': product['image'],
-                'rating_rate': product['rating']['rate'],
-                'rating_count': product['rating']['count']
-            })
+        # Then add to orders table with the items JSON
+        order_response = supabase.table('orders').insert({
+            "user_id": user_id,
+            "items": items
+        }).execute()
         
-        # Insert products into Supabase
-        for product in transformed_products:
-            supabase.table('products').insert(product).execute()
+        if hasattr(order_response, 'error') and order_response.error is not None:
+            return jsonify({"error": f"Failed to create order entry: {order_response.error}"}), 500
         
-        return jsonify({"success": True, "message": f"Added {len(transformed_products)} products to database"})
+        # Clear the cart after successful checkout
+        if user_id in CARTS:
+            CARTS[user_id] = []
+        
+        response_data = {
+            "success": True, 
+            "message": "Order processed successfully",
+            "order_id": order_response.data[0]['id'] if order_response.data else None
+        }
+        
+        # If we generated a new UUID, include it in the response
+        if new_uuid_generated:
+            response_data["new_user_id"] = user_id
+        
+        return jsonify(response_data)
+        
     except Exception as e:
-        return jsonify({"error": f"Failed to seed database: {str(e)}"}), 500
-
+        return jsonify({"error": f"Checkout failed: {str(e)}"}), 500
 @app.route('/<path:path>')
 def catch_all(path):
     """A special route that catches all other requests"""
