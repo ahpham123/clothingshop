@@ -17,15 +17,14 @@ Flask makes it easy to create a web application by providing a set of functions 
 ## How to Run Locally
 
 1. Install Python 3.7 or later
-2. Use this template by clicking "Use this template" button above or [click here](https://github.com/acmcsufoss/hackpack_flask_vercel/generate) and download the zip folder or clone it using Git
-3. Open the folder in VSCode
-4. Create a virtual environment:
+2. Open the folder in VSCode
+3. Create a virtual environment:
 
    ```terminal
    python3 -m venv venv
    ```
 
-5. Activate the virtual environment:
+4. Activate the virtual environment:
 
    Linux
 
@@ -39,19 +38,24 @@ Flask makes it easy to create a web application by providing a set of functions 
    .\venv\Scripts\activate
    ```
 
-6. Install dependencies:
+5. Install dependencies:
 
    ```terminal
    pip install -r requirements.txt
    ```
 
-7. Run the app:
+6. Run the app:
 
    ```terminal
    flask --app api/index.py run --debug
    ```
 
-   Run coverage tests:
+7. Run coverage tests:
    ```terminal
    pytest --cov=. --cov-report=term-missing
+   ```
+
+8. Run unit tests:
+   ```terminal
+   pytest -v api/test_index.py
    ```
