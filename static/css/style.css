@@ -195,6 +195,20 @@ nav ul li a.active {
     font-size: 0.8rem;
 }
 
+.product-search {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.product-search input {
+    width: 60%;
+    max-width: 400px;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
 .add-to-cart {
     width: 100%;
     padding: 10px;

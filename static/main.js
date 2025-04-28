@@ -54,6 +54,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     async function loadAllProducts() {
+        // Inside loadAllProducts or after page load:
+        const searchInput = document.getElementById('product-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', async function () {
+                const query = this.value.trim();
+                try {
+                    const response = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
+                    const products = await response.json();
+                    displayProducts(products, 'all-products-grid');
+                } catch (error) {
+                    console.error('Search failed:', error);
+                }
+            });
+        }
         try {
             const products = await fetchProducts();
             

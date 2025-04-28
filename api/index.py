@@ -39,14 +39,20 @@ def cart():
 @app.route('/api/products', methods=['GET'])
 def get_products():
     try:
-        response = supabase.table('products').select('*').execute()
+        search_query = request.args.get('search', '').strip()
+        
+        query = supabase.table('products').select('*')
+        
+        if search_query:
+            query = query.ilike('title', f'%{search_query}%')
+        
+        response = query.execute()
         
         if hasattr(response, 'error') and response.error is not None:
             return jsonify({"error": "Failed to fetch products"}), 500
             
         products = response.data
         
-        # Transform the products to properly nest rating data
         transformed_products = []
         for product in products:
             transformed_product = {
