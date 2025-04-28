@@ -1,15 +1,7 @@
 
-## About Flask
+## About Sploosh
 
-Flask is a web framework that allows you to create web applications using the Python programming language. In simple terms, Flask provides you with tools and features that make it easier to build web applications.
-
-A web application is a software program that runs in a web browser. For example, when you use Facebook or Instagram, you're using a web application.
-
-Flask makes it easy to create a web application by providing a set of functions and tools that help you:
-
-- Define the structure of your application, such as the different pages or URLs users can access.
-- Define the behavior of your application, such as what happens when a user clicks a button or fills out a form.
-- Store and retrieve data, such as user information or images.
+text here
 
 ## Deployed at
 [click here](https://clothingshop-one.vercel.app/)
@@ -50,12 +42,12 @@ Flask makes it easy to create a web application by providing a set of functions 
    flask --app api/index.py run --debug
    ```
 
-7. Run coverage tests:
+Run coverage tests:
    ```terminal
    pytest --cov=. --cov-report=term-missing
    ```
 
-8. Run unit tests:
+Run unit tests:
    ```terminal
    pytest -v api/test_index.py
    ```
