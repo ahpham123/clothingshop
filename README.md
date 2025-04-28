@@ -50,3 +50,8 @@ Flask makes it easy to create a web application by providing a set of functions 
    ```terminal
    flask --app api/index.py run --debug
    ```
+
+   Run coverage tests:
+   ```terminal
+   pytest --cov=. --cov-report=term-missing
+   ```

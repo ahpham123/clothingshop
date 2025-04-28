@@ -1,8 +1,6 @@
 from flask import Flask, redirect, url_for, render_template, jsonify, request
 from flask_cors import CORS
-import json
 import os
-import requests
 from supabase import create_client
 from dotenv import load_dotenv
 import uuid
@@ -19,7 +17,7 @@ supabase = create_client(supabase_url, supabase_key)
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 CORS(app)
 
-# In-memory "database" for cart (in production, use a real database)
+# In-memory "database" for cart (to keep things simple)
 CARTS = {}
 
 @app.route('/')
@@ -183,9 +181,7 @@ def checkout():
         # Check if user_id is in the old format and convert if needed
         if user_id.startswith('user_'):
             # For existing users with the old format, generate a new UUID
-            import uuid
             user_id = str(uuid.uuid4())
-            
             # Return the new UUID so frontend can update localStorage
             new_uuid_generated = True
         else:
@@ -226,6 +222,7 @@ def checkout():
         
     except Exception as e:
         return jsonify({"error": f"Checkout failed: {str(e)}"}), 500
+
 @app.route('/<path:path>')
 def catch_all(path):
     """A special route that catches all other requests"""
