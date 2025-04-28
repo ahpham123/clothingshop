@@ -4,7 +4,7 @@
 text here
 
 ## Deployed at
-[https://clothingshop-one.vercel.app/](https://clothingshop-one.vercel.app/)
+[https://clothingshop-psi.vercel.app/](https://clothingshop-psi.vercel.app/)
 
 ## How to Run Locally
 
