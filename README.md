@@ -1,7 +1,7 @@
 
 ## About Sploosh
 
-text here
+Our goal is to create a website that functions as an e-commerce store specifically for clothes. The name of our e-commerce store is Sploosh. 
 
 ## Deployed at
 [https://clothingshop-psi.vercel.app/](https://clothingshop-psi.vercel.app/)
